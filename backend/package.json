@@ -1,0 +1,43 @@
+{
+  "name": "@moh/ams-api",
+  "private": true,
+  "version": "2.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npx tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "npx tsx --test src/domain/activity/*.test.ts src/domain/accountability/*.test.ts src/domain/compliance/*.test.ts src/domain/person/*.test.ts src/domain/admin/*.test.ts src/application/activity/*.test.ts src/application/accountability/*.test.ts src/application/compliance/*.test.ts src/application/person/*.test.ts src/application/notification/*.test.ts src/application/admin/*.test.ts src/application/dashboard/*.test.ts src/infrastructure/*.test.ts",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate deploy",
+    "db:migrate:dev": "npx prisma migrate dev",
+    "migrate:finance": "npx tsx src/scripts/migrate-finance-activities.ts",
+    "migrate:validate": "npx tsx src/scripts/validate-migration.ts",
+    "backup:ams": "bash src/scripts/backup-ams.sh",
+    "backfill:persons": "npx tsx src/scripts/backfill-persons.ts",
+    "seed:demo": "npx tsx src/scripts/seed-demo-data.ts",
+    "backup:finance": "bash src/scripts/backup-finance.sh"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.10",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

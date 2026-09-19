@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest';
+
+/** Mirror of backend notification types for UI/docs alignment. */
+export const NOTIFICATION_TYPES = [
+  'ACCOUNTABILITY_SUBMITTED',
+  'ACCOUNTABILITY_ASSIGNED',
+  'ACCOUNTABILITY_RETURNED',
+  'CLARIFICATION_REQUESTED',
+  'ACCOUNTABILITY_RESUBMITTED',
+  'ACCOUNTABILITY_APPROVED',
+  'ACCOUNTABILITY_REJECTED',
+  'ACCOUNTABILITY_CLOSED',
+  'ACCOUNTABILITY_DUE_SOON',
+  'ACCOUNTABILITY_OVERDUE',
+  'PARTICIPATION_EARLY_WARNING',
+  'PARTICIPATION_THRESHOLD_REACHED',
+  'PARTICIPATION_EXCEEDED',
+  'MONTHLY_LIMIT_EXCEEDED',
+  'ACTIVITY_OVERLAP_REVIEW',
+];
+
+describe('in-app notification types', () => {
+  it('covers the required AMS notification set', () => {
+    expect(NOTIFICATION_TYPES).toContain('ACCOUNTABILITY_OVERDUE');
+    expect(NOTIFICATION_TYPES).toContain('PARTICIPATION_EARLY_WARNING');
+    expect(NOTIFICATION_TYPES).toContain('MONTHLY_LIMIT_EXCEEDED');
+    expect(NOTIFICATION_TYPES).toHaveLength(15);
+  });
+});

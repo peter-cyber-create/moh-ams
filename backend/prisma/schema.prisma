@@ -1,0 +1,443 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model IdentityUser {
+  id              String   @id
+  email           String
+  name            String
+  username        String?
+  module          String?
+  roleName        String?  @map("role_name")
+  departmentId    String?  @map("department_id")
+  departmentName  String?  @map("department_name")
+  isActive        Boolean  @default(true) @map("is_active")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  person          Person?
+
+  @@map("identity_user")
+}
+
+model Activity {
+  id                String   @id @default(cuid())
+  financeActivityId String?  @unique @map("finance_activity_id")
+  title             String
+  description       String?
+  requestedBy       String?  @map("requested_by")
+  location          String?
+  departmentId      String?  @map("department_id")
+  departmentName    String?  @map("department_name")
+  activityDate      DateTime? @map("activity_date")
+  endDate           DateTime? @map("end_date")
+  budgetAmount      Decimal  @default(0) @map("budget_amount") @db.Decimal(14, 2)
+  funder            String?
+  referenceNumber   String?  @map("reference_number")
+  activityType      String?  @map("activity_type")
+  days              Int?
+  status            String
+  createdById       String   @map("created_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  participants ActivityParticipant[]
+  documents    ActivityDocument[]
+  events       ActivityEvent[]
+  accountabilities Accountability[]
+  teams        ActivityTeam[]
+  facilities   ActivityFacility[]
+  travels      ActivityTravel[]
+  budgetLines  ActivityBudgetLine[]
+
+  @@index([status, createdAt])
+  @@index([createdById, createdAt])
+  @@index([funder])
+  @@index([activityDate])
+  @@index([endDate])
+  @@map("activity")
+}
+
+model ActivityParticipant {
+  id         String  @id @default(cuid())
+  activityId String  @map("activity_id")
+  personId   String? @map("person_id")
+  name       String
+  title      String?
+  phone      String?
+  amount     Decimal @default(0) @db.Decimal(14, 2)
+  days       Int     @default(0)
+  sortOrder  Int     @default(0) @map("sort_order")
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  person     Person?  @relation(fields: [personId], references: [id])
+
+  @@index([activityId])
+  @@index([personId])
+  @@index([phone, name])
+  @@map("activity_participant")
+}
+
+model ActivityDocument {
+  id           String   @id @default(cuid())
+  activityId   String   @map("activity_id")
+  kind         String
+  storedPath   String   @map("stored_path")
+  originalName String   @map("original_name")
+  mimeType     String?  @map("mime_type")
+  sizeBytes    Int?     @map("size_bytes")
+  uploadedById String?  @map("uploaded_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  activity     Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, kind, createdAt])
+  @@map("activity_document")
+}
+
+model ActivityEvent {
+  id          String   @id @default(cuid())
+  activityId  String   @map("activity_id")
+  action      String
+  summary     String?
+  fromStatus  String?  @map("from_status")
+  toStatus    String?  @map("to_status")
+  meta        Json?
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, createdAt])
+  @@map("activity_event")
+}
+
+model MigrationRun {
+  id          String   @id @default(cuid())
+  source      String
+  startedAt   DateTime @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  counts      Json?
+  notes       String?
+
+  @@map("migration_run")
+}
+
+model Accountability {
+  id                String    @id @default(cuid())
+  referenceNumber   String    @unique @map("reference_number")
+  activityId        String    @map("activity_id")
+  personId          String?   @map("person_id")
+  status            String
+  currency          String    @default("UGX")
+  amountAdvanced    Decimal   @map("amount_advanced") @db.Decimal(14, 2)
+  amountReturned    Decimal   @default(0) @map("amount_returned") @db.Decimal(14, 2)
+  dueDate           DateTime  @map("due_date")
+  submittedById     String    @map("submitted_by")
+  submittedAt       DateTime? @map("submitted_at")
+  reviewerId        String?   @map("reviewer_id")
+  assignedAt        DateTime? @map("assigned_at")
+  assignedById      String?   @map("assigned_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  approvedAt        DateTime? @map("approved_at")
+  approvedById      String?   @map("approved_by")
+  rejectedAt        DateTime? @map("rejected_at")
+  rejectedById      String?   @map("rejected_by")
+  rejectionReason   String?   @map("rejection_reason")
+  closedAt          DateTime? @map("closed_at")
+  closedById        String?   @map("closed_by")
+  closureReason     String?   @map("closure_reason")
+  returnReason      String?   @map("return_reason")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  activity       Activity                    @relation(fields: [activityId], references: [id])
+  person         Person?                     @relation(fields: [personId], references: [id])
+  lines          AccountabilityLine[]
+  documents      AccountabilityDocument[]
+  events         AccountabilityEvent[]
+  clarifications AccountabilityClarification[]
+  comments       AccountabilityComment[]
+
+  @@index([status, dueDate])
+  @@index([activityId])
+  @@index([reviewerId, status])
+  @@index([submittedById])
+  @@index([personId])
+  @@index([createdAt])
+  @@map("accountability")
+}
+
+model AccountabilityLine {
+  id               String         @id @default(cuid())
+  accountabilityId String         @map("accountability_id")
+  kind             String
+  description      String
+  amount           Decimal        @db.Decimal(14, 2)
+  sortOrder        Int            @default(0) @map("sort_order")
+  accountability   Accountability @relation(fields: [accountabilityId], references: [id], onDelete: Cascade)
+
+  @@index([accountabilityId])
+  @@map("accountability_line")
+}
+
+model AccountabilityDocument {
+  id               String         @id @default(cuid())
+  accountabilityId String         @map("accountability_id")
+  kind             String         @default("supporting")
+  storedPath       String         @map("stored_path")
+  originalName     String         @map("original_name")
+  mimeType         String?        @map("mime_type")
+  sizeBytes        Int?           @map("size_bytes")
+  uploadedById     String?        @map("uploaded_by")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  accountability   Accountability @relation(fields: [accountabilityId], references: [id], onDelete: Cascade)
+
+  @@index([accountabilityId, createdAt])
+  @@map("accountability_document")
+}
+
+model AccountabilityEvent {
+  id               String         @id @default(cuid())
+  accountabilityId String         @map("accountability_id")
+  action           String
+  summary          String?
+  fromStatus       String?        @map("from_status")
+  toStatus         String?        @map("to_status")
+  meta             Json?
+  actorUserId      String?        @map("actor_user_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  accountability   Accountability @relation(fields: [accountabilityId], references: [id], onDelete: Cascade)
+
+  @@index([accountabilityId, createdAt])
+  @@map("accountability_event")
+}
+
+model AccountabilityClarification {
+  id               String         @id @default(cuid())
+  accountabilityId String         @map("accountability_id")
+  question         String
+  requestedById    String         @map("requested_by")
+  requestedAt      DateTime       @default(now()) @map("requested_at")
+  response         String?
+  respondedById    String?        @map("responded_by")
+  respondedAt      DateTime?      @map("responded_at")
+  status           String         @default("open")
+  accountability   Accountability @relation(fields: [accountabilityId], references: [id], onDelete: Cascade)
+
+  @@index([accountabilityId, status])
+  @@map("accountability_clarification")
+}
+
+model AccountabilityComment {
+  id               String         @id @default(cuid())
+  accountabilityId String         @map("accountability_id")
+  kind             String
+  body             String
+  actorUserId      String         @map("actor_user_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  accountability   Accountability @relation(fields: [accountabilityId], references: [id], onDelete: Cascade)
+
+  @@index([accountabilityId, createdAt])
+  @@map("accountability_comment")
+}
+
+model AccountabilitySequence {
+  year Int @id
+  last Int @default(0)
+
+  @@map("accountability_sequence")
+}
+
+model Person {
+  id               String    @id @default(cuid())
+  personReference  String    @unique @map("person_reference")
+  fullName         String    @map("full_name")
+  phone            String?
+  phoneNormalized  String?   @map("phone_normalized")
+  email            String?
+  organisation     String?
+  title            String?
+  departmentId     String?   @map("department_id")
+  departmentName   String?   @map("department_name")
+  identityStatus   String    @default("unverified") @map("identity_status")
+  identityUserId   String?   @unique @map("identity_user_id")
+  status           String    @default("active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  identityUser     IdentityUser? @relation(fields: [identityUserId], references: [id])
+  participants     ActivityParticipant[]
+  accountabilities Accountability[]
+  events           PersonEvent[]
+  ledTeams         ActivityTeam[]
+  teamMemberships  ActivityTeamMember[]
+
+  @@index([phoneNormalized])
+  @@index([email])
+  @@index([fullName])
+  @@index([identityStatus, status])
+  @@map("person")
+}
+
+model PersonEvent {
+  id          String   @id @default(cuid())
+  personId    String   @map("person_id")
+  action      String
+  summary     String?
+  meta        Json?
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId, createdAt])
+  @@map("person_event")
+}
+
+model PersonSequence {
+  id   Int @id @default(1)
+  last Int @default(0)
+
+  @@map("person_sequence")
+}
+
+// In-app notifications only. Not an event bus or notification engine.
+model Notification {
+  id               String    @id @default(cuid())
+  recipientUserId  String    @map("recipient_user_id")
+  type             String
+  title            String
+  message          String
+  referenceType    String?   @map("reference_type")
+  referenceId      String?   @map("reference_id")
+  href             String?
+  dedupeKey        String    @map("dedupe_key")
+  isRead           Boolean   @default(false) @map("is_read")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  readAt           DateTime? @map("read_at")
+
+  @@unique([recipientUserId, type, dedupeKey])
+  @@index([recipientUserId, isRead, createdAt])
+  @@map("notification")
+}
+
+// Lightweight admin audit trail (not an enterprise audit engine).
+model AdminAuditEvent {
+  id           String   @id @default(cuid())
+  actorUserId  String   @map("actor_user_id")
+  action       String
+  targetUserId String?  @map("target_user_id")
+  summary      String
+  meta         Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([targetUserId, createdAt])
+  @@map("admin_audit_event")
+}
+
+// Rich operational data — not required at registration; populated progressively or via seed/import.
+model ActivityTeam {
+  id             String   @id @default(cuid())
+  activityId     String   @map("activity_id")
+  teamCode       String?  @map("team_code")
+  teamName       String?  @map("team_name")
+  leaderPersonId String?  @map("leader_person_id")
+  notes          String?
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  activity Activity             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  leader   Person?              @relation(fields: [leaderPersonId], references: [id])
+  members  ActivityTeamMember[]
+  travels  ActivityTravel[]
+  budgetLines ActivityBudgetLine[]
+
+  @@index([activityId])
+  @@map("activity_team")
+}
+
+model ActivityTeamMember {
+  id             String  @id @default(cuid())
+  teamId         String  @map("team_id")
+  personId       String? @map("person_id")
+  designation    String?
+  organisation   String?
+  phone          String?
+  rate           Decimal? @db.Decimal(14, 2)
+  airtimeData    Decimal? @map("airtime_data") @db.Decimal(14, 2)
+  frequency      Decimal? @db.Decimal(10, 2)
+  perDiem        Decimal? @map("per_diem") @db.Decimal(14, 2)
+  fuelAllocation Decimal? @map("fuel_allocation") @db.Decimal(14, 2)
+  suppliedTotal  Decimal? @map("supplied_total") @db.Decimal(14, 2)
+  calculatedTotal Decimal? @map("calculated_total") @db.Decimal(14, 2)
+  sortOrder      Int     @default(0) @map("sort_order")
+
+  team   ActivityTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  person Person?      @relation(fields: [personId], references: [id])
+
+  @@index([teamId])
+  @@index([personId])
+  @@map("activity_team_member")
+}
+
+model ActivityFacility {
+  id           String  @id @default(cuid())
+  activityId   String  @map("activity_id")
+  region       String?
+  district     String?
+  facility     String?
+  facilityCode String? @map("facility_code")
+  sortOrder    Int     @default(0) @map("sort_order")
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@index([region, district])
+  @@map("activity_facility")
+}
+
+model ActivityTravel {
+  id                 String   @id @default(cuid())
+  activityId         String   @map("activity_id")
+  teamId             String?  @map("team_id")
+  region             String?
+  facility           String?
+  fromLocation       String?  @map("from_location")
+  toLocation         String?  @map("to_location")
+  kilometres         Decimal? @db.Decimal(10, 2)
+  litres             Decimal? @db.Decimal(10, 2)
+  fuelRate           Decimal? @map("fuel_rate") @db.Decimal(14, 2)
+  fuelAmount         Decimal? @map("fuel_amount") @db.Decimal(14, 2)
+  suppliedFuelAmount Decimal? @map("supplied_fuel_amount") @db.Decimal(14, 2)
+  sortOrder          Int      @default(0) @map("sort_order")
+
+  activity Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  team     ActivityTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([activityId])
+  @@index([teamId])
+  @@map("activity_travel")
+}
+
+model ActivityBudgetLine {
+  id               String   @id @default(cuid())
+  activityId       String   @map("activity_id")
+  teamId           String?  @map("team_id")
+  category         String
+  description      String?
+  quantity         Decimal? @db.Decimal(10, 2)
+  frequency        Decimal? @db.Decimal(10, 2)
+  rate             Decimal? @db.Decimal(14, 2)
+  amount           Decimal  @db.Decimal(14, 2)
+  suppliedAmount   Decimal? @map("supplied_amount") @db.Decimal(14, 2)
+  calculatedAmount Decimal? @map("calculated_amount") @db.Decimal(14, 2)
+  sortOrder        Int      @default(0) @map("sort_order")
+
+  activity Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  team     ActivityTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([activityId])
+  @@index([teamId])
+  @@map("activity_budget_line")
+}

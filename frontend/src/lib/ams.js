@@ -26,9 +26,16 @@ export const LEGACY_DUE_NOTE =
 
 export const DRAFT_KEY = 'ams_activity_draft';
 
+function roleLabel(user) {
+  if (typeof user?.role === 'string') return user.role;
+  return user?.role?.name || user?.roleName || '';
+}
+
 export function roleProfile(user) {
-  const moduleName = String(user?.module || '').toLowerCase();
-  const roleName = String(user?.role?.name || user?.roleName || '').toLowerCase();
+  const roleName = String(roleLabel(user)).toLowerCase();
+  const moduleName = String(
+    user?.module || (roleName.includes('admin') || roleName.includes('super') ? 'all' : ''),
+  ).toLowerCase();
   const isAdmin =
     moduleName === 'admin' ||
     moduleName === 'all' ||

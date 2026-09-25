@@ -11,12 +11,15 @@ export class AppError extends Error {
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
+  const coded = err as { statusCode?: number; status?: number };
   const status =
-    err instanceof DomainError || err instanceof AppError
-      ? (err as DomainError).statusCode
-      : (err as { statusCode?: number }).statusCode || 500;
-  const message = status === 500 ? err.message || 'Internal server error' : err.message;
-  res.status(status).json({ error: message });
+    err instanceof DomainError || err instanceof AppError ? (err as DomainError).statusCode : coded.statusCode || coded.status || 500;
+  if (status >= 500) {
+    console.error(err);
+    res.status(status).json({ error: 'Internal server error' });
+    return;
+  }
+  res.status(status).json({ error: err.message || 'Request failed' });
 }
 
 export function notFound(_req: Request, res: Response) {

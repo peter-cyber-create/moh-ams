@@ -13,7 +13,7 @@ import {
   validateReportFile,
 } from '../lib/ams';
 import { roleProfile, unwrapList } from '../lib/ams';
-import api, { errorMessage } from '../lib/api';
+import api, { errorMessage, openAuthenticatedFile } from '../lib/api';
 import { ACCOUNTABILITY_API } from '../lib/activityApi';
 import { useAuth } from '../lib/AuthContext';
 
@@ -35,10 +35,12 @@ export default function ActivityDetailPage() {
   const [timeline, setTimeline] = useState([]);
   const [cases, setCases] = useState([]);
   const [tab, setTab] = useState('overview');
+  const [loadError, setLoadError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [docError, setDocError] = useState('');
   const notice = location.state?.notice;
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function ActivityDetailPage() {
         setCases(unwrapList(c.data));
       })
       .catch((err) => {
-        if (!cancelled) setError(errorMessage(err, 'Could not load this activity.'));
+        if (!cancelled) setLoadError(errorMessage(err, 'Could not load this activity.'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -67,10 +69,10 @@ export default function ActivityDetailPage() {
   }, [id]);
 
   if (loading) return <p className="text-sm text-ink-500">Loading activity…</p>;
-  if (error) {
+  if (loadError) {
     return (
       <div>
-        <p className="text-sm text-rose-700">{error}</p>
+        <p className="text-sm text-rose-700">{loadError}</p>
         <Link to="/activities" className="ams-btn-secondary mt-4 inline-flex">
           Return to my activities
         </Link>
@@ -134,6 +136,11 @@ export default function ActivityDetailPage() {
       {notice ? (
         <div className="mb-6 rounded-2xl bg-teal-100 p-4 text-sm text-teal-900">{notice}</div>
       ) : null}
+      {error ? (
+        <p className="mb-4 text-sm text-rose-700" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {TABS.map((t) => (
@@ -186,12 +193,26 @@ export default function ActivityDetailPage() {
       {tab === 'documents' ? (
         <div className="ams-card space-y-3">
           {activity.reportPath ? (
-            <a className="font-medium text-teal-800 underline" href={activity.reportPath} target="_blank" rel="noreferrer">
+            <button
+              type="button"
+              className="font-medium text-teal-800 underline"
+              onClick={() => {
+                setDocError('');
+                openAuthenticatedFile(activity.reportPath).catch((err) =>
+                  setDocError(errorMessage(err, 'Could not open the activity report.')),
+                );
+              }}
+            >
               Open submitted activity report
-            </a>
+            </button>
           ) : (
             <p className="text-sm text-ink-500">No activity report file yet. This file belongs to the activity, not to an accountability case.</p>
           )}
+          {docError ? (
+            <p className="text-sm text-rose-700" role="alert">
+              {docError}
+            </p>
+          ) : null}
           {due ? (
             <div className="space-y-2">
               <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} />

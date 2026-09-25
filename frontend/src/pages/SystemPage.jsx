@@ -25,6 +25,7 @@ export default function SystemPage() {
   }
 
   const online = health?.status === 'ok';
+  const databaseOk = health?.database ? health.database === 'ok' : online;
 
   return (
     <div>
@@ -41,7 +42,7 @@ export default function SystemPage() {
         </p>
         <p>
           <span className="font-semibold text-ink-900">Database</span>
-          <span className="mt-0.5 block">{online ? 'Connected' : error ? 'Unavailable' : 'Checking…'}</span>
+          <span className="mt-0.5 block">{databaseOk ? 'Connected' : error || health ? 'Unavailable' : 'Checking…'}</span>
         </p>
         <p>
           <span className="font-semibold text-ink-900">Version</span>

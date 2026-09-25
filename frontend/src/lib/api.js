@@ -1,7 +1,18 @@
 import axios from 'axios';
 import { clearSession, getToken } from './auth';
 
-const api = axios.create({ headers: { 'Content-Type': 'application/json' } });
+export const apiOrigin = String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+export function apiUrl(path) {
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${apiOrigin}${normalized}`;
+}
+
+const api = axios.create({
+  baseURL: apiOrigin || undefined,
+  headers: { 'Content-Type': 'application/json' },
+});
 
 api.interceptors.request.use((config) => {
   const token = getToken();
@@ -32,7 +43,7 @@ export function errorMessage(err, fallback = 'Something went wrong.') {
   if (!err?.response) {
     const msg = String(err?.message || '');
     if (err?.code === 'ERR_NETWORK' || msg === 'Network Error' || msg.includes('ECONNREFUSED')) {
-      return 'The AMS or sign-in service is unavailable. Confirm AMS API port 3020 and Finance login port 3000.';
+      return 'The service is unavailable. Try again shortly, or contact your system administrator if it continues.';
     }
     return msg || fallback;
   }
@@ -43,6 +54,21 @@ export function errorMessage(err, fallback = 'Something went wrong.') {
     return err.response.data?.error || 'You do not have access to this action.';
   }
   return err.response.data?.error || fallback;
+}
+
+export async function openAuthenticatedFile(filePath) {
+  const res = await api.get(filePath, { responseType: 'blob' });
+  const url = URL.createObjectURL(res.data);
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!opened) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = String(filePath).split('/').pop() || 'document';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export default api;

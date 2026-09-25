@@ -1,8 +1,12 @@
 import 'express-async-errors';
 import cors from 'cors';
 import express from 'express';
+import fs from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
+import { prisma } from './infrastructure/prisma.js';
+import { resolveUploadFile } from './infrastructure/local-file-store.js';
+import { proxyAuth } from './presentation/auth-proxy.js';
 import { ActivityService } from './application/activity/activity.service.js';
 import { AccountabilityService } from './application/accountability/accountability.service.js';
 import { ComplianceService } from './application/compliance/compliance.service.js';
@@ -60,12 +64,38 @@ export function createApp() {
   const admController = adminController(adminService);
 
   const app = express();
-  app.use(cors({ origin: true, credentials: true }));
-  app.use(express.json());
-  app.use('/uploads', express.static(path.resolve(process.cwd(), config.uploadDir)));
-  app.get('/health', (_req, res) =>
-    res.json({ status: 'ok', service: 'ams-activity', timestamp: new Date().toISOString() }),
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin || config.corsOrigins.includes(origin)) {
+          callback(null, origin ?? true);
+          return;
+        }
+        callback(null, false);
+      },
+      credentials: true,
+    }),
   );
+  app.use(express.json({ limit: '1mb' }));
+  app.get('/health', async (_req, res) => {
+    const timestamp = new Date().toISOString();
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.json({ status: 'ok', service: 'ams-activity', database: 'ok', timestamp });
+    } catch {
+      res.status(503).json({ status: 'error', service: 'ams-activity', database: 'unavailable', timestamp });
+    }
+  });
+  app.use('/api/auth', (req, res, next) => {
+    proxyAuth(req, res).catch(next);
+  });
 
   const auth = requireAuth(identity);
   app.use('/api/v1/activities', auth, activityRoutes(controller));
@@ -76,6 +106,47 @@ export function createApp() {
   app.use('/api/v1/dashboard', auth, dashboardRoutes(dashController));
   app.use('/api/v1/notifications', auth, notificationRoutes(notifController));
   app.use('/api/v1/admin', auth, adminRoutes(admController));
+  const uploadRoot = path.resolve(process.cwd(), config.uploadDir);
+  app.use('/uploads', auth, (req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.status(405).json({ error: 'Not found' });
+      return;
+    }
+    const full = resolveUploadFile(uploadRoot, req.path);
+    if (!full) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+    res.sendFile(full, (err) => {
+      if (!err) return;
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+      next(err);
+    });
+  });
+
+  if (config.webDist) {
+    const web = path.resolve(config.webDist);
+    app.use(express.static(web, { index: false, redirect: false }));
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        next();
+        return;
+      }
+      if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path === '/health') {
+        next();
+        return;
+      }
+      const index = path.join(web, 'index.html');
+      if (!fs.existsSync(index)) {
+        next();
+        return;
+      }
+      res.sendFile(index);
+    });
+  }
 
   app.use(notFound);
   app.use(errorHandler);

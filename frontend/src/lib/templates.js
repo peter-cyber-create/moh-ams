@@ -1,4 +1,5 @@
 import { ACTIVITY_API } from './activityApi';
+import { apiUrl } from './api';
 import { getToken } from './auth';
 
 export const TEMPLATE_DOWNLOADS = {
@@ -7,7 +8,7 @@ export const TEMPLATE_DOWNLOADS = {
 
 export async function downloadTemplate(path, fallbackName) {
   const token = getToken();
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!res.ok) {

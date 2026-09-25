@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import StatusPill from '../components/StatusPill';
 import { formatDate, formatMoney, validateReportFile } from '../lib/ams';
 import { roleProfile } from '../lib/ams';
-import api, { errorMessage } from '../lib/api';
+import api, { errorMessage, openAuthenticatedFile } from '../lib/api';
 import { ACCOUNTABILITY_API } from '../lib/activityApi';
 import { useAuth } from '../lib/AuthContext';
 
@@ -222,9 +222,17 @@ export default function AccountabilityCasePage() {
           ) : (
             (row.documents || []).map((d) => (
               <p key={d.id} className="text-sm">
-                <a className="font-medium text-teal-800 underline" href={d.storedPath} target="_blank" rel="noreferrer">
+                <button
+                  type="button"
+                  className="font-medium text-teal-800 underline"
+                  onClick={() =>
+                    openAuthenticatedFile(d.storedPath).catch((err) =>
+                      setError(errorMessage(err, 'Could not open this document.')),
+                    )
+                  }
+                >
                   {d.originalName}
-                </a>
+                </button>
               </p>
             ))
           )}

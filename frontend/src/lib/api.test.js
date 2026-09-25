@@ -3,8 +3,9 @@ import { errorMessage } from './api.js';
 import { parseLoginResponse } from './auth.js';
 
 describe('authentication error handling', () => {
-  it('explains when the Finance API is unreachable', () => {
-    expect(errorMessage({ code: 'ERR_NETWORK', message: 'Network Error' })).toMatch(/3020/);
+  it('explains when the service is unreachable', () => {
+    expect(errorMessage({ code: 'ERR_NETWORK', message: 'Network Error' })).toMatch(/unavailable/i);
+    expect(errorMessage({ code: 'ERR_NETWORK', message: 'Network Error' })).not.toMatch(/3020|3000/);
   });
 
   it('explains invalid credentials', () => {

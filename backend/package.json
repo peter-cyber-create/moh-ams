@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "test": "npx tsx --test src/domain/activity/*.test.ts src/domain/accountability/*.test.ts src/domain/compliance/*.test.ts src/domain/person/*.test.ts src/domain/admin/*.test.ts src/application/activity/*.test.ts src/application/accountability/*.test.ts src/application/compliance/*.test.ts src/application/person/*.test.ts src/application/notification/*.test.ts src/application/admin/*.test.ts src/application/dashboard/*.test.ts src/infrastructure/*.test.ts",
     "db:generate": "npx prisma generate",

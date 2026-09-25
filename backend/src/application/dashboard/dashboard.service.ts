@@ -76,12 +76,12 @@ export class DashboardService {
       now,
     });
 
-    const compSummary = complianceOverview?.summary || {};
-    const exceeded = Number(compSummary.exceeded || 0);
-    const thresholdReached = Number(compSummary.thresholdReached || 0);
-    const monthlyExceeded = Number(compSummary.monthlyExceeded || 0);
-    const overlaps = Number(compSummary.overlaps || 0);
-    const earlyWarning = Number(compSummary.earlyWarning || 0);
+    const compSummary = complianceOverview?.summary;
+    const exceeded = Number(compSummary?.exceeded || 0);
+    const thresholdReached = Number(compSummary?.thresholdReached || 0);
+    const monthlyExceeded = Number(compSummary?.monthlyExceeded || 0);
+    const overlaps = Number(compSummary?.overlaps || 0);
+    const earlyWarning = Number(compSummary?.earlyWarning || 0);
     const peopleMonitored = Number(complianceOverview?.total || 0);
 
     const attention = [
@@ -401,7 +401,7 @@ export class DashboardService {
   private async syncStateNotifications(
     actor: Actor,
     ctx: {
-      overdueItems: { data: Array<Record<string, unknown> & { id?: string; referenceNumber?: string; dueDate?: string }> };
+      overdueItems: { data: Array<{ id?: string; referenceNumber?: string; dueDate?: string | Date }> };
       overview: Awaited<ReturnType<ComplianceService['overview']>> | null;
       year: number;
       now: Date;

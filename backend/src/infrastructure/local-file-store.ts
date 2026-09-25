@@ -9,6 +9,23 @@ export function isAllowedReportExtension(filename: string) {
   return ALLOWED.has(path.extname(filename || '').toLowerCase());
 }
 
+/** Resolve a request path under the upload root. Rejects traversal. */
+export function resolveUploadFile(uploadRoot: string, requestPath: string) {
+  const root = path.resolve(uploadRoot);
+  let rel = requestPath || '';
+  try {
+    rel = decodeURIComponent(rel);
+  } catch {
+    return null;
+  }
+  rel = rel.replace(/^\/+/, '');
+  if (!rel || rel.includes('\0')) return null;
+  const full = path.resolve(root, rel);
+  if (full !== root && !full.startsWith(`${root}${path.sep}`)) return null;
+  if (!isAllowedReportExtension(full)) return null;
+  return full;
+}
+
 export class LocalFileStore {
   constructor(
     private readonly root = path.resolve(process.cwd(), config.uploadDir, 'reports'),

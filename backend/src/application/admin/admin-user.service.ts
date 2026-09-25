@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../infrastructure/prisma.js';
 import { badRequest, forbidden, notFound } from '../../domain/activity/errors.js';
 import type { Actor } from '../../domain/activity/permissions.js';
@@ -76,7 +77,7 @@ export class AdminUserService {
           action,
           targetUserId,
           summary,
-          meta,
+          meta: meta as Prisma.InputJsonValue,
         },
       });
     } catch {

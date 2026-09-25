@@ -83,6 +83,12 @@ describe('authentication-related role navigation', () => {
     ]);
   });
 
+  it('treats a SuperAdmin role string as the overall account', () => {
+    const overall = { role: 'SuperAdmin' };
+    expect(roleProfile(overall).isAdmin).toBe(true);
+    expect(moreNav(overall).map((i) => i.title)).toContain('Administration');
+  });
+
   it('keeps Administration nested under More for admins only', () => {
     const admin = { module: 'Admin', role: { name: 'Admin' } };
     const officer = { module: 'Finance', role: { name: 'User' } };

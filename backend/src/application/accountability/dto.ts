@@ -28,7 +28,6 @@ export function toAccountabilityDto(row: AccountabilityRecord, now = new Date())
     dueDate: row.dueDate,
     overdue: isOverdue(row.dueDate, row.status, now),
     submittedById: row.submittedById,
-    personId: row.personId ?? null,
     submittedAt: row.submittedAt,
     reviewerId: row.reviewerId,
     assignedAt: row.assignedAt,

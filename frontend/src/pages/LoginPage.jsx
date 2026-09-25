@@ -39,7 +39,7 @@ export default function LoginPage() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-16">
         <header className="mb-10 text-center">
           <img
-            src="/branding/uganda-coat-of-arms.png"
+            src={`${import.meta.env.BASE_URL}branding/uganda-coat-of-arms.png`}
             alt="Coat of Arms of the Republic of Uganda"
             className="mx-auto h-28 w-auto object-contain"
           />

@@ -12,10 +12,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const onLogin = typeof window !== 'undefined' && window.location.pathname.startsWith('/login');
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    const path =
+      typeof window === 'undefined'
+        ? ''
+        : base && window.location.pathname.startsWith(base)
+          ? window.location.pathname.slice(base.length) || '/'
+          : window.location.pathname;
+    const onLogin = path === '/login' || path.startsWith('/login/');
     if (err.response?.status === 401 && typeof window !== 'undefined' && !onLogin) {
       clearSession();
-      window.location.replace('/login?session=expired');
+      window.location.replace(`${import.meta.env.BASE_URL}login?session=expired`);
     }
     return Promise.reject(err);
   },

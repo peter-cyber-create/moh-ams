@@ -193,7 +193,7 @@ export default function AmsShell() {
         <div className={`shrink-0 border-b border-ink-100 px-3 py-3 ${collapsed ? 'px-2' : ''}`}>
           <Link to="/" className="flex items-start gap-2">
             <img
-              src="/branding/uganda-coat-of-arms.png"
+              src={`${import.meta.env.BASE_URL}branding/uganda-coat-of-arms.png`}
               alt=""
               className="mt-0.5 h-8 w-8 shrink-0 object-contain"
             />
